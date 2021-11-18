@@ -1,11 +1,7 @@
 
 library(shiny)
-library(bslib)
-library(thematic)
-
 library(curl)
 library(data.table)
-
 library(scales)
 
 
@@ -15,10 +11,8 @@ counties_data <- fread("https://raw.githubusercontent.com/nytimes/covid-19-data/
 
 
 ui <- fluidPage(
-  theme = bs_theme(bootswatch = "darkly"),
-
-  titlePanel("COVID-19 Mobile"),
-
+  tags$head(tags$style(HTML("table { background-color: #ffffff; } body { background-color: #cccccc; }"))),
+  titlePanel("COVID-19 Dashboard"),
   sidebarLayout(
     sidebarPanel(
       selectInput(
@@ -33,7 +27,6 @@ ui <- fluidPage(
         choices = "Select state first..."
       )
     ),
-
     mainPanel(
       wellPanel(
         tableOutput("summary_table")
@@ -62,8 +55,6 @@ ui <- fluidPage(
 
 
 server <- function(input, output, session) {
-  thematic_shiny(session = session)
-  
   observe({
     updateSelectInput(
       session = session,
@@ -72,13 +63,12 @@ server <- function(input, output, session) {
     )
   })
 
-
   output$summary_table <- renderTable(
     {
       m <- matrix(nrow = 5, ncol = 3)
 
       colnames(m) <- c(paste(input$county, "County"), input$state, "USA")
-      rownames(m) <- c("Updated", "Deaths Change", "Total Deaths", "Cases CHange", "Total Cases")
+      rownames(m) <- c("Updated", "Deaths Change", "Total Deaths", "Cases Change", "Total Cases")
 
       m[1, 1] <- format(tail(counties_data[state == input$state & county == input$county, date], 1), "%b %d")
       m[1, 2] <- format(tail(states_data[state == input$state, date], 1), "%b %d")
@@ -105,111 +95,117 @@ server <- function(input, output, session) {
     rownames = TRUE
   )
 
-
   output$county_deaths <- renderPlot({
     plot(
       c(head(deaths, 1), diff(deaths)) ~ date,
       data = counties_data[state %in% input$state & county %in% input$county],
-      col = 1,
-      type = "h",
+      col = 4,
+      type = "l",
       xlab = "Date",
       ylab = "Deaths",
       main = paste(input$county, "\nCounty Deaths")
     )
 
     lines(
-      frollmean(x = c(head(deaths, 1), diff(deaths)), n = 7, align = "center") ~ date,
-      data = counties_data[state %in% input$state & county %in% input$county]
+      frollmean(x = c(head(deaths, 1), diff(deaths)), n = 7, align = "right") ~ date,
+      data = counties_data[state %in% input$state & county %in% input$county],
+      col = 2,
+      lwd = 2
     )
   })
-
 
   output$county_cases <- renderPlot({
     plot(
       c(head(cases, 1), diff(cases)) ~ date,
       data = counties_data[state %in% input$state & county %in% input$county],
-      col = 2,
-      type = "h",
+      col = 4,
+      type = "l",
       xlab = "Date",
       ylab = "Cases",
       main = paste(input$county, "\nCounty Cases")
     )
 
     lines(
-      frollmean(x = c(head(cases, 1), diff(cases)), n = 7, align = "center") ~ date,
-      data = counties_data[state %in% input$state & county %in% input$county]
+      frollmean(x = c(head(cases, 1), diff(cases)), n = 7, align = "right") ~ date,
+      data = counties_data[state %in% input$state & county %in% input$county],
+      col = 2,
+      lwd = 2
     )
   })
-
 
   output$state_deaths <- renderPlot({
     plot(
       c(head(deaths, 1), diff(deaths)) ~ date,
       data = states_data[state %in% input$state],
-      col = 1,
-      type = "h",
+      col = 4,
+      type = "l",
       xlab = "Date",
       ylab = "Deaths",
       main = paste(input$state, "\nDeaths")
     )
 
     lines(
-      frollmean(x = c(head(deaths, 1), diff(deaths)), n = 7, align = "center") ~ date,
-      data = states_data[state %in% input$state]
+      frollmean(x = c(head(deaths, 1), diff(deaths)), n = 7, align = "right") ~ date,
+      data = states_data[state %in% input$state],
+      col = 2,
+      lwd = 2
     )
   })
-
 
   output$state_cases <- renderPlot({
     plot(
       c(head(cases, 1), diff(cases)) ~ date,
       data = states_data[state %in% input$state],
-      col = 2,
-      type = "h",
+      col = 4,
+      type = "l",
       xlab = "Date",
       ylab = "Cases",
       main = paste(input$state, "\nCases")
     )
 
     lines(
-      frollmean(x = c(head(cases, 1), diff(cases)), n = 7, align = "center") ~ date,
-      data = states_data[state %in% input$state]
+      frollmean(x = c(head(cases, 1), diff(cases)), n = 7, align = "right") ~ date,
+      data = states_data[state %in% input$state],
+      col = 2,
+      lwd = 2
     )
   })
-
 
   output$us_deaths <- renderPlot({
     plot(
       c(head(deaths, 1), diff(deaths)) ~ date,
       data = us_data,
-      col = 1,
-      type = "h",
+      col = 4,
+      type = "l",
       xlab = "Date",
       ylab = "Deaths",
       main = "National\nDeaths"
     )
 
     lines(
-      frollmean(x = c(head(deaths, 1), diff(deaths)), n = 7, align = "center") ~ date,
-      data = us_data
+      frollmean(x = c(head(deaths, 1), diff(deaths)), n = 7, align = "right") ~ date,
+      data = us_data,
+      col = 2,
+      lwd = 2
     )
   })
-
 
   output$us_cases <- renderPlot({
     plot(
       c(head(cases, 1), diff(cases)) ~ date,
       data = us_data,
-      col = 2,
-      type = "h",
+      col = 4,
+      type = "l",
       xlab = "Date",
       ylab = "Cases",
       main = "National\nCases"
     )
 
     lines(
-      frollmean(x = c(head(cases, 1), diff(cases)), n = 7, align = "center") ~ date,
-      data = us_data
+      frollmean(x = c(head(cases, 1), diff(cases)), n = 7, align = "right") ~ date,
+      data = us_data,
+      col = 2,
+      lwd = 2
     )
   })
 }
